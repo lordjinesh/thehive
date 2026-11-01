@@ -37,6 +37,8 @@ jobs:
         run: ./gradlew --console=plain assembleFossDebug --warning-mode summary
         env:
           PULL_REQUEST: "false"
+          METROLIST_APPLICATION_ID: com.lordjinesh.thehive
+          METROLIST_APP_NAME: The Hive
 
       - name: Rename debug APK
         run: |

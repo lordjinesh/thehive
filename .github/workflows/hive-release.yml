@@ -72,6 +72,8 @@ jobs:
         run: ./gradlew --console=plain assembleFossRelease --warning-mode summary
         env:
           PULL_REQUEST: "false"
+          METROLIST_APPLICATION_ID: com.lordjinesh.thehive
+          METROLIST_APP_NAME: The Hive
 
       - name: Sign APK
         uses: ilharp/sign-android-release@v2.0.0
