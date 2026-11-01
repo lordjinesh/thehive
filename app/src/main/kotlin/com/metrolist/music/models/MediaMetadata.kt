@@ -35,6 +35,7 @@ data class MediaMetadata(
     val suggestedBy: String? = null,
     val isEpisode: Boolean = false,
     val uploadEntityId: String? = null,
+    val isDirectStream: Boolean = false,
 ) : Serializable {
     val isVideoSong: Boolean
         get() = musicVideoType != null && musicVideoType != MUSIC_VIDEO_TYPE_ATV

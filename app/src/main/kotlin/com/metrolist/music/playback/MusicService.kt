@@ -81,9 +81,16 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.extractor.ExtractorsFactory
+import androidx.media3.extractor.flac.FlacExtractor
 import androidx.media3.extractor.mkv.MatroskaExtractor
+import androidx.media3.extractor.mp3.Mp3Extractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.ogg.OggExtractor
+import androidx.media3.extractor.ts.AdtsExtractor
+import androidx.media3.extractor.ts.PsExtractor
+import androidx.media3.extractor.ts.TsExtractor
+import androidx.media3.extractor.wav.WavExtractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
@@ -3811,6 +3818,11 @@ class MusicService :
     ): DataSource.Factory {
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
+            // Direct streams (internet radio, Subsonic/Navidrome, local files) carry their
+            // playable URL as the media id. Bypass the YouTube InnerTube resolver entirely.
+            if (mediaId.startsWith("http://") || mediaId.startsWith("https://")) {
+                return@Factory dataSpec
+            }
             val storedFormat = runBlocking(Dispatchers.IO) { database.format(mediaId).first() }
             applyAudioNormalizationBeforePlayback(
                 processor = normalizationProcessor,
@@ -3991,7 +4003,20 @@ class MusicService :
         DefaultMediaSourceFactory(
             createDataSourceFactory(normalizationProcessor, playerProvider),
             ExtractorsFactory {
-                arrayOf(MatroskaExtractor(), FragmentedMp4Extractor(), Mp4Extractor())
+                arrayOf(
+                    MatroskaExtractor(),
+                    FragmentedMp4Extractor(),
+                    Mp4Extractor(),
+                    // Audio-only extractors required for internet radio and direct
+                    // Subsonic/local streams (MP3, AAC/ADTS, Ogg, TS, FLAC, WAV).
+                    Mp3Extractor(),
+                    AdtsExtractor(),
+                    OggExtractor(),
+                    TsExtractor(),
+                    PsExtractor(),
+                    FlacExtractor(),
+                    WavExtractor(),
+                )
             },
         )
 

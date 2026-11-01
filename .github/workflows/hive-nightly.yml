@@ -1,0 +1,54 @@
+name: Nightly Debug APK
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - "README.md"
+      - "changelog.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Set Up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+          cache-cleanup: on-success
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APK (foss)
+        run: ./gradlew --console=plain assembleFossDebug --warning-mode summary
+        env:
+          PULL_REQUEST: "false"
+
+      - name: Rename debug APK
+        run: |
+          OUTPUT_DIR="app/build/outputs/apk/foss/debug"
+          mkdir -p "$OUTPUT_DIR/out"
+          APK=$(find "$OUTPUT_DIR" -name "*.apk" | head -1)
+          cp "$APK" "$OUTPUT_DIR/out/The-Hive-debug-${GITHUB_SHA::7}.apk"
+          ls -la "$OUTPUT_DIR/out/"
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: The-Hive-debug
+          path: app/build/outputs/apk/foss/debug/out/*.apk
+          retention-days: 14

@@ -994,4 +994,11 @@
     <string name="stream_source_web_creator_desc">Creator web client.</string>
     <string name="top_result">Top result</string>
     <string name="other">Other</string>
+    <string name="radio_search_hint">Search stations</string>
+    <string name="radio_top">Top stations</string>
+    <string name="radio_by_country">By country</string>
+    <string name="radio_search_results">Results</string>
+    <string name="radio_error">Could not load radio stations</string>
+    <string name="palette_hive_purple">Hive Purple</string>
+    <string name="palette_hive_gold">Hive Gold</string>
 </resources>
