@@ -33,12 +33,37 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # The debug build type needs a keystore. Prefer the project's real signing
+      # key (stable identity: nightlies can replace each other and the release
+      # build without uninstalling first). Fall back to an ephemeral keytool
+      # keystore when the secrets are not configured yet.
+      - name: Provide debug signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "Using project keystore for debug signing"
+            echo "$KEYSTORE_B64" | base64 -d > ./app/workflow-debug.keystore
+            echo "HIVE_USE_PROJECT_KEYSTORE=true" >> "$GITHUB_ENV"
+          else
+            echo "No KEYSTORE secret; generating ephemeral debug keystore"
+            keytool -genkeypair -v -keystore ./app/persistent-debug.keystore \
+              -storetype PKCS12 -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=The Hive,C=IN"
+            echo "HIVE_USE_PROJECT_KEYSTORE=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Build Debug APK (foss)
         run: ./gradlew --console=plain assembleFossDebug --warning-mode summary
         env:
           PULL_REQUEST: "false"
           METROLIST_APPLICATION_ID: com.lordjinesh.thehive
           METROLIST_APP_NAME: The Hive
+          METROLIST_DEBUG_KEYSTORE_PATH: ${{ env.HIVE_USE_PROJECT_KEYSTORE == 'true' && 'workflow-debug.keystore' || '' }}
+          METROLIST_DEBUG_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          METROLIST_DEBUG_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          METROLIST_DEBUG_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename debug APK
         run: |
